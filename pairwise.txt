@@ -1,0 +1,39 @@
+def dot(a:Iterable[(String, String)]):Array[((String, String),Int)] = {
+val data = a.toArray.sortBy(_._1)
+var pair: Array[((String,String),Int)] = Array()
+for( i<- 0 to data.length-1 ){
+for( j<- i+1 to data.length-1 ){
+val key = (data(i)._1,data(j)._1)
+val value = data(i)._2.toInt*data(j)._2.toInt
+val p = (key,value)
+pair = pair :+ p
+}
+}
+return pair
+}
+
+val data = sc.textFile("test10w.txt")
+val record = data.map(l=>(l.split(',')(1),(l.split(',')(0),l.split(',')(2))))
+val postings = record.groupByKey()
+val ab = postings.flatMap(l => dot(l._2))
+val rab = ab.reduceByKey(_+_)
+rab.saveAsTextFile("pairwise10w")
+
+
+def similar(a:String,b:Map[String, String]):((String, String),Double) = {
+val x = a.split(",")(0)
+val y = a.split(",")(1)
+val dot = a.split(",")(2).toDouble
+val vx = b.apply(x)
+val vy = b.apply(y)
+var sim = dot/(vx.toDouble*vy.toDouble)
+return ((x,y),sim)
+}
+
+val mo = sc.textFile("module.txt")
+val d = mo.map( l=> (l.split(',')(0),l.split(',')(1)))
+val dic = d.collectAsMap().toMap
+val pair = sc.textFile("all5w.txt")
+val pr = pair.map(l => l.replaceAll("[\\(\\)]",""))
+val result = pr.map(l => similar(l,dic))
+result.saveAsTextFile("result5w")
